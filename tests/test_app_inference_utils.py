@@ -9,6 +9,7 @@ from unittest import mock
 import torch
 from PIL import Image
 
+import prod.app as streamlit_app
 import prod.utils as app_utils
 
 
@@ -112,6 +113,18 @@ class AppInferenceUtilsTest(unittest.TestCase):
                 with mock.patch.object(app_utils, "create_model_from_config", return_value=target_model):
                     with self.assertRaisesRegex(RuntimeError, "dev/modelo.pth no coincide"):
                         app_utils.load_model(str(checkpoint_path))
+
+    def test_auto_select_scan_config_always_uses_standard_high_detail_threshold(self):
+        for size in [(800, 600), (1920, 1080), (4000, 3000)]:
+            with self.subTest(size=size):
+                image = Image.new("RGB", size, color="white")
+
+                scan_mode, grid_size, score_threshold, high_detail = streamlit_app.auto_select_scan_config(image)
+
+                self.assertEqual(scan_mode, "Estandar")
+                self.assertEqual(grid_size, 2)
+                self.assertEqual(score_threshold, 0.5)
+                self.assertTrue(high_detail)
 
 
 if __name__ == "__main__":

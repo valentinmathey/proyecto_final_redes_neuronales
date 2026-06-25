@@ -17,6 +17,7 @@ Esta carpeta centraliza la documentacion operativa y tecnica del repositorio.
 ### `prod/`
 
 - `python/prod/__init__.md`: API reexportada del paquete `prod`.
+- `python/prod/app.md`: app Streamlit de inferencia, modo automatico y consola tecnica.
 - `python/prod/detection_dataset.md`: utilidades de dataset, descarga, transforms y `CarDamageDetectionDataset`.
 - `python/prod/detection_models.md`: factories y helpers de modelos de deteccion.
 - `python/prod/detection_training.md`: loops de entrenamiento, validacion y checkpoints.
@@ -26,10 +27,11 @@ Esta carpeta centraliza la documentacion operativa y tecnica del repositorio.
 
 1. `../README.md`
 2. `setup_windows_gpu.md`
-3. `python/prod/detection_dataset.md`
-4. `python/prod/detection_models.md`
-5. `python/prod/detection_training.md`
-6. `python/prod/detection_metrics.md`
+3. `python/prod/app.md`
+4. `python/prod/detection_dataset.md`
+5. `python/prod/detection_models.md`
+6. `python/prod/detection_training.md`
+7. `python/prod/detection_metrics.md`
 
 ## Alcance
 
