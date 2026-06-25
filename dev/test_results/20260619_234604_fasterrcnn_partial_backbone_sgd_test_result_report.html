@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte final de deteccion en test</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f7f9;
+            --surface: rgba(255, 255, 255, 0.9);
+            --surface-strong: #ffffff;
+            --border: rgba(17, 39, 54, 0.12);
+            --text: #112736;
+            --muted: #5b6b77;
+            --accent: #1565c0;
+            --accent-soft: rgba(21, 101, 192, 0.1);
+            --shadow: 0 18px 40px rgba(17, 39, 54, 0.09);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 48px;
+            font-family: Aptos, Manrope, "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, #ffffff 0%, rgba(255, 255, 255, 0) 32%),
+                linear-gradient(135deg, #eef3f6 0%, #dfe8ed 100%);
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .hero,
+        .section-shell {
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+        }
+
+        .hero {
+            padding: 28px 30px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: clamp(1.9rem, 3vw, 2.8rem);
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            max-width: 920px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .metric-card {
+            padding: 18px 18px 16px;
+            border-radius: 16px;
+            background: var(--surface-strong);
+            border: 1px solid var(--border);
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+        }
+
+        .section-shell {
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 24px 10px;
+        }
+
+        .section-header h2 {
+            margin: 0 0 6px;
+            font-size: 1.3rem;
+        }
+
+        .section-header p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .section-body {
+            padding: 0 24px 24px;
+        }
+
+        .table-wrap {
+            overflow: auto;
+        }
+
+        table.results-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--surface-strong);
+        }
+
+        .results-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 14px 15px;
+            text-align: left;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            background: rgba(240, 245, 249, 0.98);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .results-table tbody td {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(17, 39, 54, 0.08);
+            vertical-align: top;
+        }
+
+        .results-table tbody tr:nth-child(even) {
+            background: rgba(244, 248, 250, 0.84);
+        }
+
+        .pr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .pr-card {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface-strong);
+            padding: 18px;
+        }
+
+        .pr-card-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .pr-card-header h3 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .pr-card-header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+            white-space: nowrap;
+        }
+
+        .pr-chart {
+            width: 100%;
+            height: auto;
+        }
+
+        .chart-bg {
+            fill: #f7fbff;
+            stroke: rgba(21, 101, 192, 0.08);
+        }
+
+        .grid-line {
+            stroke: rgba(17, 39, 54, 0.08);
+            stroke-width: 1;
+        }
+
+        .axis-line {
+            stroke: rgba(17, 39, 54, 0.25);
+            stroke-width: 1.4;
+        }
+
+        .pr-line {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .axis-label,
+        .axis-title {
+            fill: var(--muted);
+            font-size: 11px;
+        }
+
+        .empty-state {
+            margin: 0;
+            padding: 18px;
+            border-radius: 14px;
+            background: var(--accent-soft);
+            color: var(--muted);
+        }
+
+        .summary-note {
+            margin-top: 14px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: var(--accent-soft);
+            color: var(--text);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 18px 12px 28px;
+            }
+
+            .hero,
+            .section-shell {
+                border-radius: 16px;
+            }
+
+            .section-header,
+            .section-body,
+            .hero {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <h1>Reporte final de deteccion en test</h1>
+            <p>
+                Reporte final de test para fasterrcnn_partial_backbone.
+                Resume metricas globales, diferencias por clase, sensibilidad a NMS y curvas precision-recall por clase.
+            </p>
+            <div class="metric-grid">
+                
+        <article class="metric-card">
+            <span class="metric-label">mAP@50:95</span>
+            <strong class="metric-value">0.4620</strong>
+        </article>
+        
+        <article class="metric-card">
+            <span class="metric-label">mAP@50</span>
+            <strong class="metric-value">0.6657</strong>
+        </article>
+        
+        <article class="metric-card">
+            <span class="metric-label">mAP@75</span>
+            <strong class="metric-value">0.4910</strong>
+        </article>
+        
+        <article class="metric-card">
+            <span class="metric-label">mAR@100</span>
+            <strong class="metric-value">0.5944</strong>
+        </article>
+        
+            </div>
+            <div class="summary-note">
+                El barrido de NMS apenas mueve el mAP global, por lo que NMS no parece ser la causa principal de la brecha entre clases.
+            </div>
+        </section>
+
+        <section class="section-shell">
+            <div class="section-header">
+                <h2>Metricas por clase</h2>
+                <p>mAP y mAR del checkpoint final sobre el split de test.</p>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap"><table class="dataframe results-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>class_id</th>
+      <th>class_name</th>
+      <th>map_per_class</th>
+      <th>mar_100_per_class</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4</td>
+      <td>Vidrio roto (glass shatter)</td>
+      <td>0.8157</td>
+      <td>0.8592</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Neumático pinchado (tire flat)</td>
+      <td>0.7662</td>
+      <td>0.8344</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Faro roto (lamp broken)</td>
+      <td>0.5306</td>
+      <td>0.6232</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Rayón (scratch)</td>
+      <td>0.2540</td>
+      <td>0.4684</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Abolladura (dent)</td>
+      <td>0.2516</td>
+      <td>0.4415</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Grieta (crack)</td>
+      <td>0.1542</td>
+      <td>0.3400</td>
+    </tr>
+  </tbody>
+</table></div>
+            </div>
+        </section>
+
+        <section class="section-shell">
+            <div class="section-header">
+                <h2>Diagnostico del dataset</h2>
+                <p>
+                    Split: test |
+                    imagenes: 374 |
+                    anotaciones: 785
+                </p>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap"><table class="dataframe results-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>class_id</th>
+      <th>class_name</th>
+      <th>annotation_count</th>
+      <th>image_count</th>
+      <th>median_bbox_area</th>
+      <th>median_bbox_area_pct</th>
+      <th>mean_instances_per_image</th>
+      <th>max_instances_per_image</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>dent</td>
+      <td>236</td>
+      <td>157</td>
+      <td>38498.0</td>
+      <td>5.374</td>
+      <td>1.50</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>scratch</td>
+      <td>307</td>
+      <td>183</td>
+      <td>21624.0</td>
+      <td>3.242</td>
+      <td>1.68</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>crack</td>
+      <td>70</td>
+      <td>48</td>
+      <td>1764.5</td>
+      <td>0.257</td>
+      <td>1.46</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>glass shatter</td>
+      <td>71</td>
+      <td>71</td>
+      <td>375222.0</td>
+      <td>56.255</td>
+      <td>1.00</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>lamp broken</td>
+      <td>69</td>
+      <td>65</td>
+      <td>94940.0</td>
+      <td>14.234</td>
+      <td>1.06</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>tire flat</td>
+      <td>32</td>
+      <td>31</td>
+      <td>182278.5</td>
+      <td>27.214</td>
+      <td>1.03</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table></div>
+            </div>
+        </section>
+
+        <section class="section-shell">
+            <div class="section-header">
+                <h2>Sensibilidad a NMS</h2>
+                <p>
+                    score_threshold=0.05 |
+                    detections_per_img=100 |
+                    baseline_nms=0.5
+                </p>
+            </div>
+            <div class="section-body">
+                <div class="table-wrap"><table class="dataframe results-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>nms_threshold</th>
+      <th>map</th>
+      <th>map_50</th>
+      <th>map_75</th>
+      <th>mar_100</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0.3</td>
+      <td>0.457937</td>
+      <td>0.663226</td>
+      <td>0.486799</td>
+      <td>0.564123</td>
+    </tr>
+    <tr>
+      <td>0.5</td>
+      <td>0.462048</td>
+      <td>0.665721</td>
+      <td>0.491020</td>
+      <td>0.594441</td>
+    </tr>
+    <tr>
+      <td>0.7</td>
+      <td>0.458794</td>
+      <td>0.641837</td>
+      <td>0.498150</td>
+      <td>0.634513</td>
+    </tr>
+  </tbody>
+</table></div>
+            </div>
+        </section>
+
+        <section class="section-shell">
+            <div class="section-header">
+                <h2>Curvas precision-recall por clase</h2>
+                <p>Una curva por clase a IoU=0.50, area=all y max_dets=100.</p>
+            </div>
+            <div class="section-body">
+                <div class="pr-grid">
+                    
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>dent</h3>
+                <p>AP@50=0.5296</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de dent">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,20.00 54.74,20.00 58.32,20.00 61.90,20.00 65.48,20.00 69.06,28.58 72.64,28.58 76.22,28.58 79.80,34.21 83.38,34.21 86.96,38.73 90.54,42.27 94.12,44.52 97.70,44.52 101.28,50.04 104.86,50.04 108.44,51.09 112.02,51.09 115.60,63.70 119.18,63.70 122.76,63.70 126.34,65.51 129.92,65.51 133.50,65.51 137.08,65.51 140.66,65.51 144.24,65.51 147.82,71.50 151.40,72.40 154.98,72.40 158.56,72.40 162.14,72.40 165.72,72.40 169.30,72.40 172.88,72.40 176.46,78.62 180.04,91.65 183.62,93.88 187.20,95.03 190.78,95.75 194.36,96.25 197.94,96.25 201.52,96.25 205.10,96.25 208.68,96.25 212.26,96.25 215.84,96.25 219.42,97.80 223.00,103.23 226.58,109.52 230.16,112.38 233.74,113.23 237.32,119.25 240.90,120.60 244.48,120.62 248.06,121.06 251.64,122.25 255.22,123.37 258.80,125.13 262.38,125.75 265.96,126.37 269.54,130.29 273.12,131.40 276.70,136.38 280.28,138.67 283.86,145.52 287.44,148.33 291.02,150.03 294.60,151.50 298.18,152.05 301.76,152.74 305.34,157.33 308.92,157.33 312.50,159.09 316.08,165.41 319.66,172.59 323.24,181.37 326.82,181.84 330.40,182.20 333.98,188.04 337.56,189.80 341.14,194.23 344.72,226.00 348.30,226.00 351.88,226.00 355.46,226.00 359.04,226.00 362.62,226.00 366.20,226.00 369.78,226.00 373.36,226.00 376.94,226.00 380.52,226.00 384.10,226.00 387.68,226.00 391.26,226.00 394.84,226.00 398.42,226.00 402.00,226.00" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>scratch</h3>
+                <p>AP@50=0.5450</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de scratch">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,35.85 54.74,35.85 58.32,40.60 61.90,40.60 65.48,42.07 69.06,42.07 72.64,42.07 76.22,50.29 79.80,50.90 83.38,50.90 86.96,52.04 90.54,53.71 94.12,53.71 97.70,54.92 101.28,59.87 104.86,60.06 108.44,60.06 112.02,60.66 115.60,62.19 119.18,62.19 122.76,64.99 126.34,65.78 129.92,65.78 133.50,65.78 137.08,68.13 140.66,68.79 144.24,68.79 147.82,68.79 151.40,68.79 154.98,68.79 158.56,68.79 162.14,68.79 165.72,68.79 169.30,68.79 172.88,68.79 176.46,68.79 180.04,69.17 183.62,71.18 187.20,71.50 190.78,72.41 194.36,74.70 197.94,80.27 201.52,80.96 205.10,82.11 208.68,82.61 212.26,88.98 215.84,91.38 219.42,92.50 223.00,92.71 226.58,94.39 230.16,94.39 233.74,96.06 237.32,96.38 240.90,96.97 244.48,97.81 248.06,98.06 251.64,101.43 255.22,104.27 258.80,107.28 262.38,112.76 265.96,114.27 269.54,117.11 273.12,120.04 276.70,129.96 280.28,134.09 283.86,137.78 287.44,143.84 291.02,145.72 294.60,147.19 298.18,151.28 301.76,154.77 305.34,159.31 308.92,159.94 312.50,165.46 316.08,166.34 319.66,169.95 323.24,173.40 326.82,176.68 330.40,180.06 333.98,185.74 337.56,189.31 341.14,193.33 344.72,195.30 348.30,197.51 351.88,226.00 355.46,226.00 359.04,226.00 362.62,226.00 366.20,226.00 369.78,226.00 373.36,226.00 376.94,226.00 380.52,226.00 384.10,226.00 387.68,226.00 391.26,226.00 394.84,226.00 398.42,226.00 402.00,226.00" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>crack</h3>
+                <p>AP@50=0.3356</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de crack">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,45.75 54.74,45.75 58.32,45.75 61.90,45.75 65.48,45.75 69.06,45.75 72.64,45.75 76.22,45.75 79.80,45.75 83.38,76.18 86.96,93.57 90.54,103.51 94.12,103.51 97.70,103.51 101.28,103.51 104.86,103.51 108.44,103.51 112.02,103.51 115.60,103.51 119.18,103.51 122.76,103.51 126.34,103.51 129.92,103.51 133.50,103.51 137.08,103.51 140.66,103.51 144.24,103.51 147.82,103.51 151.40,103.51 154.98,103.51 158.56,104.51 162.14,134.04 165.72,134.04 169.30,134.04 172.88,136.06 176.46,136.06 180.04,136.06 183.62,136.06 187.20,136.06 190.78,136.06 194.36,136.06 197.94,136.06 201.52,136.06 205.10,140.39 208.68,149.03 212.26,149.03 215.84,149.03 219.42,152.43 223.00,152.43 226.58,170.66 230.16,170.77 233.74,177.07 237.32,177.07 240.90,178.18 244.48,180.73 248.06,180.73 251.64,182.69 255.22,186.31 258.80,187.65 262.38,187.65 265.96,193.04 269.54,194.89 273.12,194.89 276.70,207.85 280.28,209.31 283.86,209.31 287.44,210.53 291.02,226.00 294.60,226.00 298.18,226.00 301.76,226.00 305.34,226.00 308.92,226.00 312.50,226.00 316.08,226.00 319.66,226.00 323.24,226.00 326.82,226.00 330.40,226.00 333.98,226.00 337.56,226.00 341.14,226.00 344.72,226.00 348.30,226.00 351.88,226.00 355.46,226.00 359.04,226.00 362.62,226.00 366.20,226.00 369.78,226.00 373.36,226.00 376.94,226.00 380.52,226.00 384.10,226.00 387.68,226.00 391.26,226.00 394.84,226.00 398.42,226.00 402.00,226.00" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>glass shatter</h3>
+                <p>AP@50=0.9666</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de glass shatter">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,20.00 54.74,20.00 58.32,20.00 61.90,20.00 65.48,20.00 69.06,20.00 72.64,20.00 76.22,20.00 79.80,20.00 83.38,20.00 86.96,20.00 90.54,20.00 94.12,20.00 97.70,20.00 101.28,20.00 104.86,20.00 108.44,20.00 112.02,20.00 115.60,20.00 119.18,20.00 122.76,20.00 126.34,20.00 129.92,20.00 133.50,20.00 137.08,20.00 140.66,20.00 144.24,20.00 147.82,20.00 151.40,20.00 154.98,20.00 158.56,20.00 162.14,20.00 165.72,20.00 169.30,20.00 172.88,20.00 176.46,20.00 180.04,20.00 183.62,20.00 187.20,20.00 190.78,20.00 194.36,20.00 197.94,20.00 201.52,20.00 205.10,20.00 208.68,20.00 212.26,20.00 215.84,20.00 219.42,20.00 223.00,20.00 226.58,20.00 230.16,20.00 233.74,20.00 237.32,20.00 240.90,20.00 244.48,20.00 248.06,20.00 251.64,20.00 255.22,20.00 258.80,20.00 262.38,20.00 265.96,20.00 269.54,20.00 273.12,20.00 276.70,20.00 280.28,20.00 283.86,20.00 287.44,20.00 291.02,20.00 294.60,20.00 298.18,20.00 301.76,20.00 305.34,20.00 308.92,20.00 312.50,20.00 316.08,20.00 319.66,20.00 323.24,23.32 326.82,23.32 330.40,23.32 333.98,23.32 337.56,23.32 341.14,23.32 344.72,23.32 348.30,23.32 351.88,29.51 355.46,29.51 359.04,32.30 362.62,34.93 366.20,34.93 369.78,44.72 373.36,44.72 376.94,49.05 380.52,49.05 384.10,85.92 387.68,95.60 391.26,95.60 394.84,114.35 398.42,114.35 402.00,114.35" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>lamp broken</h3>
+                <p>AP@50=0.7288</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de lamp broken">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,20.00 54.74,20.00 58.32,20.00 61.90,20.00 65.48,20.00 69.06,20.00 72.64,20.00 76.22,20.00 79.80,20.00 83.38,20.00 86.96,20.00 90.54,20.00 94.12,20.00 97.70,20.00 101.28,20.00 104.86,20.00 108.44,20.00 112.02,20.00 115.60,20.00 119.18,20.00 122.76,20.00 126.34,20.00 129.92,20.00 133.50,20.00 137.08,20.00 140.66,20.00 144.24,28.58 147.82,28.58 151.40,28.58 154.98,28.58 158.56,28.58 162.14,28.58 165.72,32.88 169.30,32.88 172.88,32.88 176.46,32.88 180.04,32.88 183.62,32.88 187.20,32.88 190.78,32.88 194.36,32.88 197.94,32.88 201.52,43.54 205.10,45.12 208.68,45.12 212.26,45.12 215.84,45.12 219.42,45.12 223.00,45.12 226.58,45.12 230.16,45.12 233.74,48.74 237.32,51.35 240.90,51.35 244.48,51.35 248.06,51.69 251.64,51.69 255.22,51.69 258.80,51.69 262.38,51.69 265.96,51.69 269.54,51.69 273.12,61.90 276.70,61.90 280.28,61.90 283.86,61.90 287.44,61.90 291.02,63.90 294.60,65.06 298.18,65.06 301.76,65.06 305.34,69.19 308.92,79.26 312.50,79.26 316.08,82.34 319.66,96.65 323.24,96.65 326.82,98.70 330.40,105.83 333.98,105.83 337.56,182.67 341.14,226.00 344.72,226.00 348.30,226.00 351.88,226.00 355.46,226.00 359.04,226.00 362.62,226.00 366.20,226.00 369.78,226.00 373.36,226.00 376.94,226.00 380.52,226.00 384.10,226.00 387.68,226.00 391.26,226.00 394.84,226.00 398.42,226.00 402.00,226.00" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+        <article class="pr-card">
+            <div class="pr-card-header">
+                <h3>tire flat</h3>
+                <p>AP@50=0.8887</p>
+            </div>
+            
+    <svg class="pr-chart" viewBox="0 0 420 260" role="img" aria-label="Curva precision-recall de tire flat">
+        <rect x="0" y="0" width="420" height="260" rx="16" ry="16" class="chart-bg" />
+        <line x1="44.00" y1="20" x2="44.00" y2="226" class="grid-line" /><line x1="44" y1="226.00" x2="402" y2="226.00" class="grid-line" /><line x1="133.50" y1="20" x2="133.50" y2="226" class="grid-line" /><line x1="44" y1="174.50" x2="402" y2="174.50" class="grid-line" /><line x1="223.00" y1="20" x2="223.00" y2="226" class="grid-line" /><line x1="44" y1="123.00" x2="402" y2="123.00" class="grid-line" /><line x1="312.50" y1="20" x2="312.50" y2="226" class="grid-line" /><line x1="44" y1="71.50" x2="402" y2="71.50" class="grid-line" /><line x1="402.00" y1="20" x2="402.00" y2="226" class="grid-line" /><line x1="44" y1="20.00" x2="402" y2="20.00" class="grid-line" />
+        <line x1="44" y1="226" x2="402" y2="226" class="axis-line" />
+        <line x1="44" y1="20" x2="44" y2="226" class="axis-line" />
+        <polyline points="44.00,20.00 47.58,20.00 51.16,20.00 54.74,20.00 58.32,20.00 61.90,20.00 65.48,20.00 69.06,20.00 72.64,20.00 76.22,20.00 79.80,20.00 83.38,20.00 86.96,20.00 90.54,20.00 94.12,20.00 97.70,20.00 101.28,20.00 104.86,20.00 108.44,20.00 112.02,20.00 115.60,20.00 119.18,20.00 122.76,20.00 126.34,20.00 129.92,20.00 133.50,20.00 137.08,20.00 140.66,20.00 144.24,20.00 147.82,20.00 151.40,20.00 154.98,20.00 158.56,20.00 162.14,20.00 165.72,20.00 169.30,20.00 172.88,20.00 176.46,20.00 180.04,20.00 183.62,20.00 187.20,20.00 190.78,20.00 194.36,20.00 197.94,20.00 201.52,20.00 205.10,20.00 208.68,20.00 212.26,20.00 215.84,20.00 219.42,20.00 223.00,20.00 226.58,20.00 230.16,20.00 233.74,20.00 237.32,20.00 240.90,20.00 244.48,20.00 248.06,20.00 251.64,20.00 255.22,20.00 258.80,20.00 262.38,20.00 265.96,20.00 269.54,20.00 273.12,20.00 276.70,20.00 280.28,20.00 283.86,20.00 287.44,20.00 291.02,20.00 294.60,20.00 298.18,20.00 301.76,20.00 305.34,20.00 308.92,20.00 312.50,20.00 316.08,20.00 319.66,20.00 323.24,20.00 326.82,34.71 330.40,34.71 333.98,34.71 337.56,51.21 341.14,51.21 344.72,51.21 348.30,51.21 351.88,51.21 355.46,51.21 359.04,126.43 362.62,126.43 366.20,126.43 369.78,127.90 373.36,127.90 376.94,127.90 380.52,226.00 384.10,226.00 387.68,226.00 391.26,226.00 394.84,226.00 398.42,226.00 402.00,226.00" class="pr-line" />
+        <text x="44.00" y="250" class="axis-label" text-anchor="middle">0.00</text><text x="34" y="230.00" class="axis-label" text-anchor="end">0.00</text><text x="133.50" y="250" class="axis-label" text-anchor="middle">0.25</text><text x="34" y="178.50" class="axis-label" text-anchor="end">0.25</text><text x="223.00" y="250" class="axis-label" text-anchor="middle">0.50</text><text x="34" y="127.00" class="axis-label" text-anchor="end">0.50</text><text x="312.50" y="250" class="axis-label" text-anchor="middle">0.75</text><text x="34" y="75.50" class="axis-label" text-anchor="end">0.75</text><text x="402.00" y="250" class="axis-label" text-anchor="middle">1.00</text><text x="34" y="24.00" class="axis-label" text-anchor="end">1.00</text>
+        <text x="223.00" y="256" class="axis-title" text-anchor="middle">Recall</text>
+        <text x="18" y="123.00" class="axis-title" text-anchor="middle" transform="rotate(-90 18 123.00)">Precision</text>
+    </svg>
+    
+        </article>
+        
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Dataset pesado
+data/raw/
+data/processed/
+data/CarDD/
+data/*.zip
+data
+# Imágenes
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.webp
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+tests/artifacts/
+
+# Entornos
+.venv/
+venv/
+env/
+torch_env_2/
+# OS
+.DS_Store
+tests/*
+!tests/test_utils_export_html.py
+!tests/test_utils_portable_paths.py
+!tests/test_detection_training.py
+!tests/test_detection_dataset.py
+!tests/test_detection_metrics.py
+!tests/test_app_inference_utils.py
+
+dev/experiments/*.pth
+!dev/experiments/.gitkeep
