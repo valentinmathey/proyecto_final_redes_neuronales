@@ -832,20 +832,13 @@ def render_hero(evaluation_result: dict) -> None:
 
 
 def auto_select_scan_config(pil_image: Image.Image) -> tuple[str, int, float, bool]:
-    """Elige modo y grilla automaticamente segun resolucion.
+    """Devuelve la configuracion automatica por defecto.
 
-    Siempre usa high-detail y umbral 0.55. La grilla escala con el tamano:
-    imagen chica -> Estandar, media -> Tiled 2x2, grande -> Tiled 3x3.
+    El flujo normal usa siempre lectura estandar, verificacion high-detail y
+    umbral 0.50. La consola tecnica permite cambiar estos valores manualmente.
     """
-    width, height = pil_image.size
-    megapixels = (width * height) / 1_000_000
-    score_threshold = 0.55
-    high_detail = True
-    if megapixels <= 1.0:
-        return "Estandar", 2, score_threshold, high_detail
-    if megapixels <= 4.0:
-        return "Tiled", 2, score_threshold, high_detail
-    return "Tiled", 3, score_threshold, high_detail
+    _ = pil_image
+    return "Estandar", 2, 0.50, True
 
 
 def render_sidebar(evaluation_result: dict) -> dict:
@@ -1275,7 +1268,7 @@ def render_inspection_tab(sidebar_config: dict) -> None:
         grid_size = sidebar_config["grid_size"]
     else:
         scan_mode, grid_size, score_threshold, high_detail = auto_select_scan_config(pil_image)
-        st.caption("Configuracion automatica aplicada segun la imagen.")
+        st.caption("Configuracion automatica aplicada: Estandar + High-detail, umbral 50%.")
 
     try:
         detections, result_image, summary = run_analysis_flow(
