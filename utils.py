@@ -820,7 +820,7 @@ def _build_pr_cards_html(pr_curves) -> str:
     )
 
 
-def _build_nms_section_html(nms_sensitivity: dict) -> str:
+def _build_nms_section_html(nms_sensitivity: dict, include_conclusion: bool = False) -> str:
     nms_sensitivity = nms_sensitivity or {}
     nms_results = nms_sensitivity.get("results") or []
     nms_table_rows = [
@@ -843,6 +843,13 @@ def _build_nms_section_html(nms_sensitivity: dict) -> str:
         x_label="NMS threshold",
         y_label="mAP@50:95",
     )
+    conclusion_html = ""
+    if include_conclusion and nms_sensitivity.get("conclusion"):
+        conclusion_html = f"""
+            <div class="summary-note">
+                {escape(str(nms_sensitivity.get("conclusion")))}
+            </div>
+        """
     return f"""
     <section class="nested-section nms-highlight">
         <div class="nested-header">
@@ -857,6 +864,74 @@ def _build_nms_section_html(nms_sensitivity: dict) -> str:
             <div class="table-wrap">{nms_html}</div>
             <div>{nms_chart_html}</div>
         </div>
+        {conclusion_html}
+    </section>
+    """
+
+
+def _build_selected_test_slide_html(report: dict, slide_index: int) -> str:
+    report = report or {}
+    summary = report.get("summary") or {}
+    class_metrics = report.get("class_metrics") or []
+    pr_curves = report.get("pr_curves") or []
+    nms_sensitivity = report.get("nms_sensitivity") or {}
+
+    metadata_rows = [
+        {"item": "Run ID", "valor": report.get("run_id")},
+        {"item": "Experimento", "valor": report.get("best_experiment")},
+        {"item": "Checkpoint", "valor": report.get("checkpoint_path")},
+    ]
+    metadata_html = _build_html_table(metadata_rows, columns=["item", "valor"])
+    class_metrics_html = _build_html_table(
+        _localize_class_metric_rows(class_metrics),
+        columns=["class_id", "class_name", "map_per_class"],
+    )
+    pr_cards_html = _build_pr_cards_html(pr_curves)
+    nms_section_html = (
+        _build_nms_section_html(nms_sensitivity)
+        if nms_sensitivity.get("results")
+        else '<p class="empty-state">No hay resultados de sensibilidad a NMS para test.</p>'
+    )
+
+    return f"""
+    <section class="run-card test-report-slide" data-slide-index="{slide_index}">
+        <div class="run-header">
+            <div>
+                <p class="eyebrow">Evaluación TEST</p>
+                <h2>Evaluación final en TEST</h2>
+                <p class="run-subtitle">
+                    Resultado final del modelo seleccionado desde best_test_result.json.
+                </p>
+            </div>
+            <span class="selected-badge">Modelo seleccionado</span>
+        </div>
+        <div class="metric-grid">
+            {_build_info_cards_html(summary)}
+        </div>
+        <section class="nested-section">
+            <div class="nested-header">
+                <h3>Metadata del resultado</h3>
+                <p>Identifica la corrida y los pesos usados para evaluar test.</p>
+            </div>
+            <div class="table-wrap">{metadata_html}</div>
+        </section>
+        <section class="nested-section">
+            <div class="nested-header">
+                <h3>mAP por clase en test</h3>
+                <p>Métrica por clase del checkpoint final.</p>
+            </div>
+            <div class="table-wrap">{class_metrics_html}</div>
+        </section>
+        {nms_section_html}
+        <section class="nested-section">
+            <div class="nested-header">
+                <h3>Curvas precision-recall por clase</h3>
+                <p>Una curva por clase a IoU=0.50, area=all y max_dets=100.</p>
+            </div>
+            <div class="pr-grid">
+                {pr_cards_html or '<p class="empty-state">No se generaron curvas precision-recall.</p>'}
+            </div>
+        </section>
     </section>
     """
 
@@ -904,6 +979,7 @@ def export_model_comparison_html(
     selected_run_id: str | None = None,
     selection_reason: str | None = None,
     comparison_split: str = "val",
+    selected_test_report: dict | None = None,
 ) -> Path:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -919,7 +995,6 @@ def export_model_comparison_html(
         summary = report.get("summary") or {}
         class_metrics = report.get("class_metrics") or []
         pr_curves = report.get("pr_curves") or []
-        nms_sensitivity = report.get("nms_sensitivity") or {}
         run_id = str(run.get("run_id", ""))
         is_selected = bool(selected_run_id and run_id == selected_run_id)
         duration_hms = _format_duration_hms(run.get("training_duration_seconds"))
@@ -966,11 +1041,7 @@ def export_model_comparison_html(
         )
         pr_cards_html = _build_pr_cards_html(pr_curves)
         selected_badge = '<span class="selected-badge">Modelo seleccionado</span>' if is_selected else ""
-        nms_section_html = (
-            _build_nms_section_html(nms_sensitivity)
-            if is_selected and nms_sensitivity.get("results")
-            else ""
-        )
+        nms_section_html = ""
 
         active_class = " is-active" if run_index == 1 else ""
         selected_class = " selected-run" if is_selected else ""
@@ -1041,16 +1112,20 @@ def export_model_comparison_html(
             """
         )
 
+    if selected_test_report:
+        run_sections.append(_build_selected_test_slide_html(selected_test_report, len(run_sections)))
+
+    total_slides = len(run_sections)
     carousel_dots_html = "".join(
         f"""
         <button
             class="carousel-dot{' is-active' if index == 0 else ''}"
             type="button"
             data-slide-target="{index}"
-            aria-label="Ir a prueba {index + 1}"
+            aria-label="Ir a {'evaluación TEST' if selected_test_report and index == total_slides - 1 else f'prueba {index + 1}'}"
         ></button>
         """
-        for index in range(len(comparison_runs))
+        for index in range(total_slides)
     )
     summary_table_html = _build_model_comparison_summary_html(comparison_runs)
 
@@ -1556,7 +1631,7 @@ def export_model_comparison_html(
             <section class="carousel-shell" aria-label="Navegacion de pruebas">
                 <div class="carousel-controls">
                     <button class="carousel-button" id="prev-slide" type="button">← Anterior</button>
-                    <span class="carousel-counter" id="slide-counter">Prueba 1 de {len(comparison_runs)}</span>
+                    <span class="carousel-counter" id="slide-counter">Prueba 1 de {total_slides}</span>
                     <button class="carousel-button" id="next-slide" type="button">Siguiente →</button>
                 </div>
                 <div class="carousel-dots" aria-label="Selector de pruebas">
@@ -1929,9 +2004,6 @@ def export_detection_test_report_html(
             </p>
             <div class="metric-grid">
                 {_build_info_cards_html(summary)}
-            </div>
-            <div class="summary-note">
-                {escape((nms_sensitivity.get('conclusion') or 'Sin conclusion disponible para el barrido de NMS.'))}
             </div>
         </section>
 

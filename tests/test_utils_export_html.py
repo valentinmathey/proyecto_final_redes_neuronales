@@ -308,8 +308,8 @@ class ExportResultsComparisonHtmlTest(unittest.TestCase):
         self.assertIn("Rayón (scratch)", html_content)
         self.assertIn("Curvas precision-recall por clase", html_content)
         self.assertIn("history-chart", html_content)
-        self.assertIn("Sensibilidad a NMS del modelo seleccionado", html_content)
-        self.assertIn("NMS threshold", html_content)
+        self.assertNotIn("Sensibilidad a NMS del modelo seleccionado", html_content)
+        self.assertNotIn("NMS threshold", html_content)
         self.assertNotIn("El barrido de NMS apenas mueve el mAP global.", html_content)
         self.assertNotIn("Run ID", html_content)
         self.assertNotIn("Fecha", html_content)
@@ -327,6 +327,102 @@ class ExportResultsComparisonHtmlTest(unittest.TestCase):
         self.assertNotIn("ToTensorDetection + RandomHorizontalFlipDetection", html_content)
         self.assertNotIn("RandomHorizontalFlipDetection(p=0.5)", html_content)
         self.assertNotIn("Flip horizontal", html_content)
+
+    def test_export_model_comparison_html_appends_selected_test_slide(self):
+        comparison_runs = [
+            {
+                "run_id": "run_001",
+                "name": "fasterrcnn_baseline",
+                "optimizer_name": "sgd",
+                "best_epoch": 2,
+                "checkpoint_path": "dev/experiments/run_001_best.pth",
+                "config": {
+                    "model_name": "fasterrcnn",
+                    "optimizer_name": "sgd",
+                    "num_epochs": 2,
+                    "trainable_backbone_layers": 2,
+                    "resize": False,
+                    "image_size": None,
+                },
+                "history": [
+                    {"epoch": 1, "train_loss": 1.0, "val_loss": 1.1, "map": 0.1, "map_50": 0.2},
+                    {"epoch": 2, "train_loss": 0.8, "val_loss": 0.9, "map": 0.3, "map_50": 0.4},
+                ],
+                "validation_report": {
+                    "summary": {"map": 0.3, "map_50": 0.4, "map_75": 0.25, "mar_100": 0.5},
+                    "class_metrics": [
+                        {"class_id": 1, "class_name": "dent", "map_per_class": 0.2, "mar_100_per_class": 0.4},
+                    ],
+                    "pr_curves": [],
+                    "nms_sensitivity": {"skipped": True, "results": []},
+                },
+            },
+        ]
+        selected_test_report = {
+            "run_id": "run_001",
+            "best_experiment": "fasterrcnn_baseline",
+            "checkpoint_path": "dev/experiments/run_001_best.pth",
+            "summary": {"map": 0.46, "map_50": 0.66, "map_75": 0.49, "mar_100": 0.59},
+            "class_metrics": [
+                {"class_id": 1, "class_name": "dent", "map_per_class": 0.25, "mar_100_per_class": 0.44},
+            ],
+            "pr_curves": [
+                {
+                    "class_id": 1,
+                    "class_name": "dent",
+                    "iou": 0.5,
+                    "area": "all",
+                    "max_dets": 100,
+                    "recall": [0.0, 1.0],
+                    "precision": [1.0, 0.5],
+                    "ap_50": 0.75,
+                }
+            ],
+            "dataset_diagnostics": {
+                "split": "test",
+                "num_images": 10,
+                "num_annotations": 20,
+                "per_class": [],
+            },
+            "nms_sensitivity": {
+                "baseline_nms_threshold": 0.5,
+                "score_threshold": 0.05,
+                "detections_per_img": 100,
+                "conclusion": "El barrido de NMS apenas mueve el mAP global.",
+                "results": [
+                    {"nms_threshold": 0.3, "map": 0.45, "map_50": 0.65, "map_75": 0.48, "mar_100": 0.58},
+                    {"nms_threshold": 0.5, "map": 0.46, "map_50": 0.66, "map_75": 0.49, "mar_100": 0.59},
+                ],
+            },
+        }
+
+        output_path = Path(__file__).resolve().parent / "artifacts" / "model_comparison_with_test.html"
+        generated_path = export_model_comparison_html(
+            comparison_runs,
+            output_path,
+            selected_run_id="run_001",
+            selected_test_report=selected_test_report,
+        )
+
+        self.assertEqual(generated_path, output_path)
+        html_content = output_path.read_text(encoding="utf-8")
+        self.assertEqual(len(re.findall(r'<section class="run-card[^"]*"', html_content)), 2)
+        self.assertIn('data-slide-index="1"', html_content)
+        self.assertIn("Prueba 1 de 2", html_content)
+        self.assertIn("Evaluación final en TEST", html_content)
+        self.assertIn("Resultado final del modelo seleccionado desde best_test_result.json.", html_content)
+        self.assertIn("mAR@100", html_content)
+        self.assertIn("mAP por clase en test", html_content)
+        self.assertIn("map_per_class", html_content)
+        self.assertNotIn("mAP y mAR por clase en test", html_content)
+        self.assertNotIn("mar_100_per_class", html_content)
+        self.assertIn("Sensibilidad a NMS", html_content)
+        self.assertNotIn("El barrido de NMS apenas mueve el mAP global.", html_content)
+        self.assertIn("Curvas precision-recall por clase", html_content)
+        self.assertIn("pr-chart", html_content)
+        self.assertNotIn("Diagnostico del dataset", html_content)
+        self.assertNotIn("Diagnóstico del dataset", html_content)
+        self.assertNotIn("median_bbox_area", html_content)
 
     def test_is_detection_test_report_complete_detects_missing_sections(self):
         complete_report = {
@@ -384,6 +480,7 @@ class ExportResultsComparisonHtmlTest(unittest.TestCase):
 
     def test_archive_and_compare_detection_test_results(self):
         artifacts_dir = Path(__file__).resolve().parent / "artifacts"
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
         output_dir = artifacts_dir / "comparison_test_results"
         manifest_path = artifacts_dir / "comparison_runs_manifest.jsonl"
         canonical_path = artifacts_dir / "comparison_best_test_result.json"
