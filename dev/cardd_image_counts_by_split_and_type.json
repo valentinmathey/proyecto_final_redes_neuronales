@@ -1,0 +1,46 @@
+{
+  "dataset": "CarDD_COCO",
+  "nota": "Una imagen con más de un tipo de daño se cuenta una vez en cada tipo correspondiente.",
+  "split_image_counts": {
+    "train": 2816,
+    "val": 810,
+    "test": 374
+  },
+  "images_by_type": {
+    "by_split": {
+      "train": {
+        "crack": 434,
+        "dent": 1242,
+        "glass shatter": 469,
+        "lamp broken": 489,
+        "scratch": 1507,
+        "tire flat": 219
+      },
+      "val": {
+        "crack": 122,
+        "dent": 352,
+        "glass shatter": 134,
+        "lamp broken": 139,
+        "scratch": 431,
+        "tire flat": 59
+      },
+      "test": {
+        "crack": 48,
+        "dent": 157,
+        "glass shatter": 71,
+        "lamp broken": 65,
+        "scratch": 183,
+        "tire flat": 31
+      }
+    },
+    "total": {
+      "crack": 604,
+      "dent": 1751,
+      "glass shatter": 674,
+      "lamp broken": 693,
+      "scratch": 2121,
+      "tire flat": 309
+    }
+  },
+  "total_images": 4000
+}

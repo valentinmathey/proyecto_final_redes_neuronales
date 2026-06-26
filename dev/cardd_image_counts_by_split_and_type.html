@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CarDD · conteo de imágenes por split y tipo de daño</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #172033;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --grid: rgba(148, 163, 184, .22);
+      --line: rgba(226, 232, 240, .34);
+      --card: rgba(15, 23, 42, .72);
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(124, 58, 237, .24), transparent 38%),
+                  radial-gradient(circle at top right, rgba(6, 182, 212, .18), transparent 32%),
+                  var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    main { width: min(1240px, calc(100vw - 32px)); margin: 0 auto; padding: 36px 0 56px; }
+    .hero { display: grid; gap: 14px; margin-bottom: 24px; }
+    .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    h1 { margin: 0; font-size: clamp(30px, 4vw, 52px); line-height: 1.02; }
+    .subtitle { max-width: 880px; margin: 0; color: var(--muted); font-size: 17px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 26px 0; }
+    .stat-card, .section-card { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border: 1px solid rgba(226,232,240,.13); border-radius: 24px; box-shadow: 0 18px 48px rgba(0,0,0,.22); }
+    .stat-card { padding: 18px; }
+    .stat-card .label { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .stat-card .value { margin-top: 8px; font-size: 32px; font-weight: 800; }
+    .section-card { padding: 22px; margin-top: 18px; overflow: hidden; }
+    .section-title { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: 22px; }
+    .note { color: var(--muted); font-size: 14px; margin: 0; }
+    .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .chart-svg { width: 100%; height: auto; display: block; }
+    .chart-panel { fill: rgba(15, 23, 42, .48); stroke: rgba(226,232,240,.12); }
+    .grid-line { stroke: var(--grid); stroke-width: 1; }
+    .axis-line { stroke: var(--line); stroke-width: 1.2; }
+    .axis-label, .x-label, .y-category, .legend-label { fill: #cbd5e1; font-size: 14px; }
+    .x-label { font-weight: 700; }
+    .x-label.split, .y-category { font-size: 15px; }
+    .legend-label { font-weight: 700; }
+    .bar { filter: drop-shadow(0 8px 12px rgba(0,0,0,.22)); }
+    .bar-bg { fill: rgba(148, 163, 184, .16); }
+    .bar-value { fill: #f8fafc; font-weight: 800; font-size: 13px; paint-order: stroke; stroke: rgba(15, 23, 42, .72); stroke-width: 3px; }
+    .bar-value.large { font-size: 16px; }
+    .bar-value.horizontal { font-size: 15px; stroke-width: 2px; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 16px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid rgba(226,232,240,.10); text-align: right; }
+    th { color: #f8fafc; }
+    th:first-child, td:first-child { text-align: left; }
+    thead th { background: rgba(148, 163, 184, .12); color: #cbd5e1; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    tbody tr:hover { background: rgba(148, 163, 184, .08); }
+    code { background: rgba(15,23,42,.72); border: 1px solid rgba(226,232,240,.12); border-radius: 8px; padding: 2px 6px; color: #bae6fd; }
+    details { margin-top: 18px; color: var(--muted); }
+    pre { max-height: 340px; overflow: auto; padding: 16px; border-radius: 16px; background: rgba(2, 6, 23, .72); color: #dbeafe; border: 1px solid rgba(226,232,240,.10); }
+    @media (max-width: 900px) {
+      .stats, .chart-grid { grid-template-columns: 1fr; }
+      main { width: min(100vw - 20px, 1240px); padding-top: 24px; }
+      .section-card { padding: 14px; border-radius: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">CarDD_COCO · diagnóstico del dataset</div>
+      <h1>Conteo de imágenes por split y tipo de daño</h1>
+      <p class="subtitle">Visualización generada desde <code>dev/cardd_image_counts_by_split_and_type.json</code>. Una imagen con más de un tipo de daño se cuenta una vez en cada tipo correspondiente.</p>
+    </section>
+
+    <section class="stats" aria-label="Resumen de imágenes por split">
+      <article class="stat-card"><div class="label">Total dataset</div><div class="value">4.000</div></article>
+      <article class="stat-card"><div class="label">Train</div><div class="value">2.816</div></article>
+      <article class="stat-card"><div class="label">Validación</div><div class="value">810</div></article>
+      <article class="stat-card"><div class="label">Test</div><div class="value">374</div></article>
+    </section>
+
+    <section class="section-card">
+      <div class="section-title">
+        <h2>Distribución por tipo de daño y split</h2>
+        <p class="note">Las barras comparan imágenes únicas por clase dentro de cada split.</p>
+      </div>
+      <svg class="chart-svg" role="img" aria-label="Imágenes por tipo de daño y split" viewBox="0 0 1180 540">
+<title>Imágenes por tipo de daño y split</title>
+<desc>Gráfico de barras agrupadas para train, validación y test.</desc>
+<rect class="chart-panel" x="0" y="0" width="1180" height="540" rx="24" />
+<line class="grid-line" x1="76" y1="428.0" x2="1146" y2="428.0" />
+<text class="axis-label" x="62" y="433.0" text-anchor="end">0</text>
+<line class="grid-line" x1="76" y1="381.5" x2="1146" y2="381.5" />
+<text class="axis-label" x="62" y="386.5" text-anchor="end">200</text>
+<line class="grid-line" x1="76" y1="335.0" x2="1146" y2="335.0" />
+<text class="axis-label" x="62" y="340.0" text-anchor="end">400</text>
+<line class="grid-line" x1="76" y1="288.5" x2="1146" y2="288.5" />
+<text class="axis-label" x="62" y="293.5" text-anchor="end">600</text>
+<line class="grid-line" x1="76" y1="242.0" x2="1146" y2="242.0" />
+<text class="axis-label" x="62" y="247.0" text-anchor="end">800</text>
+<line class="grid-line" x1="76" y1="195.5" x2="1146" y2="195.5" />
+<text class="axis-label" x="62" y="200.5" text-anchor="end">1.000</text>
+<line class="grid-line" x1="76" y1="149.0" x2="1146" y2="149.0" />
+<text class="axis-label" x="62" y="154.0" text-anchor="end">1.200</text>
+<line class="grid-line" x1="76" y1="102.5" x2="1146" y2="102.5" />
+<text class="axis-label" x="62" y="107.5" text-anchor="end">1.400</text>
+<line class="grid-line" x1="76" y1="56.0" x2="1146" y2="56.0" />
+<text class="axis-label" x="62" y="61.0" text-anchor="end">1.600</text>
+<line class="axis-line" x1="76" y1="428" x2="1146" y2="428" />
+<line class="axis-line" x1="76" y1="56" x2="76" y2="428" />
+<g class="bar-group"><rect class="bar" x="106.2" y="77.6" width="34.0" height="350.4" rx="8" fill="#7c3aed"><title>scratch · Train: 1.507 imágenes</title></rect><text class="bar-value" x="123.2" y="69.6" text-anchor="middle">1.507</text></g>
+<g class="bar-group"><rect class="bar" x="148.2" y="327.8" width="34.0" height="100.2" rx="8" fill="#06b6d4"><title>scratch · Validación: 431 imágenes</title></rect><text class="bar-value" x="165.2" y="319.8" text-anchor="middle">431</text></g>
+<g class="bar-group"><rect class="bar" x="190.2" y="385.5" width="34.0" height="42.5" rx="8" fill="#f97316"><title>scratch · Test: 183 imágenes</title></rect><text class="bar-value" x="207.2" y="377.5" text-anchor="middle">183</text></g>
+<text class="x-label" transform="translate(165.2,458) rotate(-18)" text-anchor="end">Scratch</text>
+<g class="bar-group"><rect class="bar" x="284.5" y="139.2" width="34.0" height="288.8" rx="8" fill="#7c3aed"><title>dent · Train: 1.242 imágenes</title></rect><text class="bar-value" x="301.5" y="131.2" text-anchor="middle">1.242</text></g>
+<g class="bar-group"><rect class="bar" x="326.5" y="346.2" width="34.0" height="81.8" rx="8" fill="#06b6d4"><title>dent · Validación: 352 imágenes</title></rect><text class="bar-value" x="343.5" y="338.2" text-anchor="middle">352</text></g>
+<g class="bar-group"><rect class="bar" x="368.5" y="391.5" width="34.0" height="36.5" rx="8" fill="#f97316"><title>dent · Test: 157 imágenes</title></rect><text class="bar-value" x="385.5" y="383.5" text-anchor="middle">157</text></g>
+<text class="x-label" transform="translate(343.5,458) rotate(-18)" text-anchor="end">Dent</text>
+<g class="bar-group"><rect class="bar" x="462.8" y="314.3" width="34.0" height="113.7" rx="8" fill="#7c3aed"><title>lamp broken · Train: 489 imágenes</title></rect><text class="bar-value" x="479.8" y="306.3" text-anchor="middle">489</text></g>
+<g class="bar-group"><rect class="bar" x="504.8" y="395.7" width="34.0" height="32.3" rx="8" fill="#06b6d4"><title>lamp broken · Validación: 139 imágenes</title></rect><text class="bar-value" x="521.8" y="387.7" text-anchor="middle">139</text></g>
+<g class="bar-group"><rect class="bar" x="546.8" y="412.9" width="34.0" height="15.1" rx="8" fill="#f97316"><title>lamp broken · Test: 65 imágenes</title></rect><text class="bar-value" x="563.8" y="404.9" text-anchor="middle">65</text></g>
+<text class="x-label" transform="translate(521.8,458) rotate(-18)" text-anchor="end">Lamp Broken</text>
+<g class="bar-group"><rect class="bar" x="641.2" y="319.0" width="34.0" height="109.0" rx="8" fill="#7c3aed"><title>glass shatter · Train: 469 imágenes</title></rect><text class="bar-value" x="658.2" y="311.0" text-anchor="middle">469</text></g>
+<g class="bar-group"><rect class="bar" x="683.2" y="396.8" width="34.0" height="31.2" rx="8" fill="#06b6d4"><title>glass shatter · Validación: 134 imágenes</title></rect><text class="bar-value" x="700.2" y="388.8" text-anchor="middle">134</text></g>
+<g class="bar-group"><rect class="bar" x="725.2" y="411.5" width="34.0" height="16.5" rx="8" fill="#f97316"><title>glass shatter · Test: 71 imágenes</title></rect><text class="bar-value" x="742.2" y="403.5" text-anchor="middle">71</text></g>
+<text class="x-label" transform="translate(700.2,458) rotate(-18)" text-anchor="end">Glass Shatter</text>
+<g class="bar-group"><rect class="bar" x="819.5" y="327.1" width="34.0" height="100.9" rx="8" fill="#7c3aed"><title>crack · Train: 434 imágenes</title></rect><text class="bar-value" x="836.5" y="319.1" text-anchor="middle">434</text></g>
+<g class="bar-group"><rect class="bar" x="861.5" y="399.6" width="34.0" height="28.4" rx="8" fill="#06b6d4"><title>crack · Validación: 122 imágenes</title></rect><text class="bar-value" x="878.5" y="391.6" text-anchor="middle">122</text></g>
+<g class="bar-group"><rect class="bar" x="903.5" y="416.8" width="34.0" height="11.2" rx="8" fill="#f97316"><title>crack · Test: 48 imágenes</title></rect><text class="bar-value" x="920.5" y="408.8" text-anchor="middle">48</text></g>
+<text class="x-label" transform="translate(878.5,458) rotate(-18)" text-anchor="end">Crack</text>
+<g class="bar-group"><rect class="bar" x="997.8" y="377.1" width="34.0" height="50.9" rx="8" fill="#7c3aed"><title>tire flat · Train: 219 imágenes</title></rect><text class="bar-value" x="1014.8" y="369.1" text-anchor="middle">219</text></g>
+<g class="bar-group"><rect class="bar" x="1039.8" y="414.3" width="34.0" height="13.7" rx="8" fill="#06b6d4"><title>tire flat · Validación: 59 imágenes</title></rect><text class="bar-value" x="1056.8" y="406.3" text-anchor="middle">59</text></g>
+<g class="bar-group"><rect class="bar" x="1081.8" y="420.8" width="34.0" height="7.2" rx="8" fill="#f97316"><title>tire flat · Test: 31 imágenes</title></rect><text class="bar-value" x="1098.8" y="412.8" text-anchor="middle">31</text></g>
+<text class="x-label" transform="translate(1056.8,458) rotate(-18)" text-anchor="end">Tire Flat</text>
+<rect x="76" y="22" width="16" height="16" rx="4" fill="#7c3aed" />
+<text class="legend-label" x="100" y="35">Train</text>
+<rect x="226" y="22" width="16" height="16" rx="4" fill="#06b6d4" />
+<text class="legend-label" x="250" y="35">Validación</text>
+<rect x="376" y="22" width="16" height="16" rx="4" fill="#f97316" />
+<text class="legend-label" x="400" y="35">Test</text>
+</svg>
+    </section>
+
+    <section class="chart-grid">
+      <article class="section-card">
+        <div class="section-title"><h2>Imágenes por split</h2></div>
+        <svg class="chart-svg compact" role="img" aria-label="Imágenes totales por split" viewBox="0 0 620 320">
+<title>Imágenes totales por split</title>
+<rect class="chart-panel" x="0" y="0" width="620" height="320" rx="22" />
+<line class="grid-line" x1="70" y1="262.0" x2="592" y2="262.0" />
+<text class="axis-label" x="58" y="267.0" text-anchor="end">0</text>
+<line class="grid-line" x1="70" y1="186.0" x2="592" y2="186.0" />
+<text class="axis-label" x="58" y="191.0" text-anchor="end">1.000</text>
+<line class="grid-line" x1="70" y1="110.0" x2="592" y2="110.0" />
+<text class="axis-label" x="58" y="115.0" text-anchor="end">2.000</text>
+<line class="grid-line" x1="70" y1="34.0" x2="592" y2="34.0" />
+<text class="axis-label" x="58" y="39.0" text-anchor="end">3.000</text>
+<rect class="bar" x="119.0" y="48.0" width="76" height="214.0" rx="12" fill="#7c3aed"><title>Train: 2.816 imágenes</title></rect>
+<text class="bar-value large" x="157.0" y="38.0" text-anchor="middle">2.816</text>
+<text class="x-label split" x="157.0" y="298" text-anchor="middle">Train</text>
+<rect class="bar" x="293.0" y="200.4" width="76" height="61.6" rx="12" fill="#06b6d4"><title>Validación: 810 imágenes</title></rect>
+<text class="bar-value large" x="331.0" y="190.4" text-anchor="middle">810</text>
+<text class="x-label split" x="331.0" y="298" text-anchor="middle">Validación</text>
+<rect class="bar" x="467.0" y="233.6" width="76" height="28.4" rx="12" fill="#f97316"><title>Test: 374 imágenes</title></rect>
+<text class="bar-value large" x="505.0" y="223.6" text-anchor="middle">374</text>
+<text class="x-label split" x="505.0" y="298" text-anchor="middle">Test</text>
+</svg>
+      </article>
+      <article class="section-card">
+        <div class="section-title"><h2>Total por tipo de daño</h2></div>
+        <svg class="chart-svg compact" role="img" aria-label="Imágenes totales por tipo de daño" viewBox="0 0 620 380">
+<title>Imágenes totales por tipo de daño</title>
+<rect class="chart-panel" x="0" y="0" width="620" height="380" rx="22" />
+<text class="y-category" x="112" y="58.0" text-anchor="end">Scratch</text>
+<rect class="bar-bg" x="128" y="36.0" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="36.0" width="400.0" height="28" rx="10" fill="#22c55e"><title>scratch: 2.121 imágenes</title></rect>
+<text class="bar-value horizontal" x="540.0" y="56.0">2.121</text>
+<text class="y-category" x="112" y="110.7" text-anchor="end">Dent</text>
+<rect class="bar-bg" x="128" y="88.7" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="88.7" width="330.2" height="28" rx="10" fill="#22c55e"><title>dent: 1.751 imágenes</title></rect>
+<text class="bar-value horizontal" x="470.2" y="108.7">1.751</text>
+<text class="y-category" x="112" y="163.3" text-anchor="end">Lamp Broken</text>
+<rect class="bar-bg" x="128" y="141.3" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="141.3" width="130.7" height="28" rx="10" fill="#22c55e"><title>lamp broken: 693 imágenes</title></rect>
+<text class="bar-value horizontal" x="270.7" y="161.3">693</text>
+<text class="y-category" x="112" y="216.0" text-anchor="end">Glass Shatter</text>
+<rect class="bar-bg" x="128" y="194.0" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="194.0" width="127.1" height="28" rx="10" fill="#22c55e"><title>glass shatter: 674 imágenes</title></rect>
+<text class="bar-value horizontal" x="267.1" y="214.0">674</text>
+<text class="y-category" x="112" y="268.7" text-anchor="end">Crack</text>
+<rect class="bar-bg" x="128" y="246.7" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="246.7" width="113.9" height="28" rx="10" fill="#22c55e"><title>crack: 604 imágenes</title></rect>
+<text class="bar-value horizontal" x="253.9" y="266.7">604</text>
+<text class="y-category" x="112" y="321.3" text-anchor="end">Tire Flat</text>
+<rect class="bar-bg" x="128" y="299.3" width="400" height="28" rx="10" />
+<rect class="bar" x="128" y="299.3" width="58.3" height="28" rx="10" fill="#22c55e"><title>tire flat: 309 imágenes</title></rect>
+<text class="bar-value horizontal" x="198.3" y="319.3">309</text>
+</svg>
+      </article>
+    </section>
+
+    <section class="section-card">
+      <div class="section-title"><h2>Tabla fuente</h2><p class="note">Mismos valores del JSON, listos para la exposición.</p></div>
+      <table>
+        <thead><tr><th>Tipo de daño</th><th>Train</th><th>Validación</th><th>Test</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><th>scratch</th><td>1.507</td><td>431</td><td>183</td><td>2.121</td></tr><tr><th>dent</th><td>1.242</td><td>352</td><td>157</td><td>1.751</td></tr><tr><th>lamp broken</th><td>489</td><td>139</td><td>65</td><td>693</td></tr><tr><th>glass shatter</th><td>469</td><td>134</td><td>71</td><td>674</td></tr><tr><th>crack</th><td>434</td><td>122</td><td>48</td><td>604</td></tr><tr><th>tire flat</th><td>219</td><td>59</td><td>31</td><td>309</td></tr>
+        </tbody>
+      </table>
+      <details>
+        <summary>Ver JSON embebido</summary>
+        <pre id="source-json">{
+  &quot;dataset&quot;: &quot;CarDD_COCO&quot;,
+  &quot;nota&quot;: &quot;Una imagen con más de un tipo de daño se cuenta una vez en cada tipo correspondiente.&quot;,
+  &quot;split_image_counts&quot;: {
+    &quot;train&quot;: 2816,
+    &quot;val&quot;: 810,
+    &quot;test&quot;: 374
+  },
+  &quot;images_by_type&quot;: {
+    &quot;by_split&quot;: {
+      &quot;train&quot;: {
+        &quot;crack&quot;: 434,
+        &quot;dent&quot;: 1242,
+        &quot;glass shatter&quot;: 469,
+        &quot;lamp broken&quot;: 489,
+        &quot;scratch&quot;: 1507,
+        &quot;tire flat&quot;: 219
+      },
+      &quot;val&quot;: {
+        &quot;crack&quot;: 122,
+        &quot;dent&quot;: 352,
+        &quot;glass shatter&quot;: 134,
+        &quot;lamp broken&quot;: 139,
+        &quot;scratch&quot;: 431,
+        &quot;tire flat&quot;: 59
+      },
+      &quot;test&quot;: {
+        &quot;crack&quot;: 48,
+        &quot;dent&quot;: 157,
+        &quot;glass shatter&quot;: 71,
+        &quot;lamp broken&quot;: 65,
+        &quot;scratch&quot;: 183,
+        &quot;tire flat&quot;: 31
+      }
+    },
+    &quot;total&quot;: {
+      &quot;crack&quot;: 604,
+      &quot;dent&quot;: 1751,
+      &quot;glass shatter&quot;: 674,
+      &quot;lamp broken&quot;: 693,
+      &quot;scratch&quot;: 2121,
+      &quot;tire flat&quot;: 309
+    }
+  },
+  &quot;total_images&quot;: 4000
+}</pre>
+      </details>
+    </section>
+  </main>
+  <script id="cardd-image-counts" type="application/json">{
+  &quot;dataset&quot;: &quot;CarDD_COCO&quot;,
+  &quot;nota&quot;: &quot;Una imagen con más de un tipo de daño se cuenta una vez en cada tipo correspondiente.&quot;,
+  &quot;split_image_counts&quot;: {
+    &quot;train&quot;: 2816,
+    &quot;val&quot;: 810,
+    &quot;test&quot;: 374
+  },
+  &quot;images_by_type&quot;: {
+    &quot;by_split&quot;: {
+      &quot;train&quot;: {
+        &quot;crack&quot;: 434,
+        &quot;dent&quot;: 1242,
+        &quot;glass shatter&quot;: 469,
+        &quot;lamp broken&quot;: 489,
+        &quot;scratch&quot;: 1507,
+        &quot;tire flat&quot;: 219
+      },
+      &quot;val&quot;: {
+        &quot;crack&quot;: 122,
+        &quot;dent&quot;: 352,
+        &quot;glass shatter&quot;: 134,
+        &quot;lamp broken&quot;: 139,
+        &quot;scratch&quot;: 431,
+        &quot;tire flat&quot;: 59
+      },
+      &quot;test&quot;: {
+        &quot;crack&quot;: 48,
+        &quot;dent&quot;: 157,
+        &quot;glass shatter&quot;: 71,
+        &quot;lamp broken&quot;: 65,
+        &quot;scratch&quot;: 183,
+        &quot;tire flat&quot;: 31
+      }
+    },
+    &quot;total&quot;: {
+      &quot;crack&quot;: 604,
+      &quot;dent&quot;: 1751,
+      &quot;glass shatter&quot;: 674,
+      &quot;lamp broken&quot;: 693,
+      &quot;scratch&quot;: 2121,
+      &quot;tire flat&quot;: 309
+    }
+  },
+  &quot;total_images&quot;: 4000
+}</script>
+</body>
+</html>
